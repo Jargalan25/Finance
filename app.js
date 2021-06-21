@@ -22,6 +22,7 @@ var uiController = (function () {
 })();
 // Санхүүтэй ажиллах контроллер
 var financeController = (function () {
+  //private data
   var Income = function (id, description, value) {
     this.id = id;
     this.description = description;
@@ -42,20 +43,40 @@ var financeController = (function () {
       exp: 0,
     },
   };
+  return {
+    addItem: function (type, desc, val) {
+      var item, id;
+
+      // id- identification
+
+      if (data.item[type].lenght === 0) id = 1;
+      else {
+        id = data.allItems[type][data.allItems[type].lenght - 1].id + 1;
+      }
+      if (type === "inc") {
+        item = new Income(id, desc, val);
+      } else {
+        // type === exp
+        item = new Expense(id, desc, val);
+      }
+      data.allItems[type].push(item);
+    },
+  };
 })();
 // Программын холбогч контроллер
-var appController = (function (a, b) {
+var appController = (function (uiController, financeController) {
   var ctrlAddItem = function () {
     // 1. Оруулах өгөгдлийг дэлгэцээс олж авна
-    console.log(a.getInput());
-
+    var input = uiController.getInput();
+    financeController.addItem(input.type, input.description, input.value);
     // 2. Олж авсан өгөгдлүүдээ санхүүгийн контроллерт дамжуулж тэнд хадгална.
     // 3. Олж авсан өгөгдлүүдээ веб дээр тохирох хэсэгт гаргах
     // 4. Төсвийг тооцоолно.
     // 5. Эцсийн үлдэгдэл тооцоог дэлгэцэнд гаргана
   };
+  // Холбосон эвент листенрүүд
   var setupEventListeners = function () {
-    var DOM = a.getDOMStrings();
+    var DOM = uiController.getDOMStrings();
     document.querySelector(DOM.addBtn).addEventListener("click", function () {
       ctrlAddItem();
     });
