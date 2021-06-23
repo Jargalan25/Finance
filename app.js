@@ -18,6 +18,26 @@ var uiController = (function () {
     getDOMStrings: function () {
       return DOMStrings;
     },
+    addListItem: function (item, type) {
+      // Орлого зарлагын элементийг агуулсан html-ийг бэлтгэнэ.
+      var html, list;
+      if (type === "inc") {
+        list = ".income__list";
+        html =
+          '<div class="item clearfix" id="income-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      } else {
+        // type === exp
+        list = ".expenses__list";
+        html =
+          '<div class="item clearfix" id="expense-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+      // Тэр html- дотроо орлого зарлагын утгуудыг REPLACE хийж өөрчилнө.
+      html = html.replace("%id%", item.id);
+      html = html.replace("%description%", item.description);
+      html = html.replace("%value%", item.value);
+      // Бэлтгэсэн html-ээ DOM-руу хийж өгнө.
+      document.querySelector(list).insertAdjacentHTML("beforeend", html);
+    },
   };
 })();
 // Санхүүтэй ажиллах контроллер
@@ -49,7 +69,7 @@ var financeController = (function () {
 
       // id- identification
 
-      if (data.item[type].lenght === 0) id = 1;
+      if (data.allItems[type].lenght === 0) id = 1;
       else {
         id = data.allItems[type][data.allItems[type].lenght - 1].id + 1;
       }
@@ -60,6 +80,8 @@ var financeController = (function () {
         item = new Expense(id, desc, val);
       }
       data.allItems[type].push(item);
+
+      return item;
     },
   };
 })();
@@ -68,9 +90,14 @@ var appController = (function (uiController, financeController) {
   var ctrlAddItem = function () {
     // 1. Оруулах өгөгдлийг дэлгэцээс олж авна
     var input = uiController.getInput();
-    financeController.addItem(input.type, input.description, input.value);
     // 2. Олж авсан өгөгдлүүдээ санхүүгийн контроллерт дамжуулж тэнд хадгална.
+    var item = financeController.addItem(
+      input.type,
+      input.description,
+      input.value
+    );
     // 3. Олж авсан өгөгдлүүдээ веб дээр тохирох хэсэгт гаргах
+    uiController.addListItem(item, input.type);
     // 4. Төсвийг тооцоолно.
     // 5. Эцсийн үлдэгдэл тооцоог дэлгэцэнд гаргана
   };
