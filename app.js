@@ -91,6 +91,7 @@ var financeController = (function () {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
   };
 
   // private data
@@ -99,6 +100,19 @@ var financeController = (function () {
     this.description = description;
     this.value = value;
   };
+
+  Expense.prototype.calcPercentage = function (totalIncome) {
+    if (totalIncome > 0) {
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    } else {
+      this.percentage = 0;
+    }
+  };
+
+  Expense.prototype.getPercentage = function () {
+    return this.percentage;
+  };
+
   var calculateTotal = function (type) {
     var sum = 0;
     data.items[type].forEach(function (el) {
@@ -131,8 +145,23 @@ var financeController = (function () {
       // Төсвийг шинээр тооцоолно
       data.tusuv = data.totals.inc - data.totals.exp;
       // Орлого зарлагын хувийг тооцоолно.
-      data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      if (data.totals.inc !== 0) {
+        data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      }
     },
+    calculatePercentages: function () {
+      data.items.exp.forEach(function (el) {
+        el.calcPercentage(data.totals.inc);
+      });
+    },
+
+    getPercentages: function () {
+      var allPercentages = data.items.exp.map(function (el) {
+        return el.getPercentage();
+      });
+      return allPercentages;
+    },
+
     tusuviigAvah: function () {
       return {
         tusuv: data.tusuv,
@@ -195,13 +224,24 @@ var appController = (function (uiController, financeController) {
       // 3. ÐžÐ»Ð¶ Ð°Ð²ÑÐ°Ð½ Ó©Ð³Ó©Ð³Ð´Ð»Ò¯Ò¯Ð´ÑÑ Ð²ÑÐ± Ð´ÑÑÑ€ÑÑ Ñ‚Ð¾Ñ…Ð¸Ñ€Ð¾Ñ… Ñ…ÑÑÑÐ³Ñ‚ Ð½ÑŒ Ð³Ð°Ñ€Ð³Ð°Ð½Ð°
       uiController.addListItem(item, input.type);
       uiController.clearFields();
-      // 4. Ð¢Ó©ÑÐ²Ð¸Ð¹Ð³ Ñ‚Ð¾Ð¾Ñ†Ð¾Ð¾Ð»Ð½Ð¾
-      financeController.tusuvTootsooloh();
-      // 5. Ð­Ñ†ÑÐ¸Ð¹Ð½ Ò¯Ð»Ð´ÑÐ³Ð´ÑÐ», Ñ‚Ð¾Ð¾Ñ†Ð¾Ð¾Ð³ Ð´ÑÐ»Ð³ÑÑ†ÑÐ½Ð´ Ð³Ð°Ñ€Ð³Ð°Ð½Ð°.
-      var tusuv = financeController.tusuviigAvah();
-      // 6. Төсөвийг дэлгэцэнд гаргах
-      uiController.tusviigUzuuleh(tusuv);
+      //Төсвийг шинээр тооцоолоод бэлтгэх
+      updateTusuv();
     }
+  };
+
+  var updateTusuv = function () {
+    // 4. Ð¢Ó©ÑÐ²Ð¸Ð¹Ð³ Ñ‚Ð¾Ð¾Ñ†Ð¾Ð¾Ð»Ð½Ð¾
+    financeController.tusuvTootsooloh();
+    // 5. Ð­Ñ†ÑÐ¸Ð¹Ð½ Ò¯Ð»Ð´ÑÐ³Ð´ÑÐ», Ñ‚Ð¾Ð¾Ñ†Ð¾Ð¾Ð³ Ð´ÑÐ»Ð³ÑÑ†ÑÐ½Ð´ Ð³Ð°Ñ€Ð³Ð°Ð½Ð°.
+    var tusuv = financeController.tusuviigAvah();
+    // 6. Төсөвийг дэлгэцэнд гаргах
+    uiController.tusviigUzuuleh(tusuv);
+    // 7. Хувийг тооцоолно.
+    financeController.calculatePercentages();
+    // 8. Элементүүдийн хувийг хүлээж авна.
+    var allPercentages = financeController.getPercentages();
+    // 9. Эдгээр хувийг дэлгэцэнд гаргана.
+    console.log(allPercentages);
   };
 
   var setupEventListeners = function () {
@@ -232,6 +272,7 @@ var appController = (function (uiController, financeController) {
           // 2. Дэлгэц дээрээс энэ элементийг устгана.
           uiController.deleteListItem(id);
           // 3. Үлдэгдэл тооцоог шинэчилж харуулна.
+          updateTusuv();
         }
       });
   };
